@@ -45,9 +45,10 @@ Reference results (Gpixel/s, saturated rows):
 | GPU | video engines | level 1 | level 4 | level 7 | script |
 |---|---|---|---|---|---|
 | UHD 630 (Gen9.5 iGPU) | 1 | 0.14 | 0.25 | 0.54 | current |
-| Core Ultra 200V iGPU (Lunar Lake, Xe2, iHD 26.1.5) | 1 | 0.29 | 0.73 | 1.09 | earlier, decode included |
+| Core Ultra 200V iGPU (Lunar Lake, Xe2, iHD 26.1.5) | 1 | 0.32 | 1.00 | 1.80 | current |
+| Core Ultra 200V, decoding the whole clip in every session | 1 | 0.29 | 0.73 | 1.09 | earlier |
 
-The earlier script decoded the whole clip in every session. On the UHD 630 that cost almost nothing: the old and current scripts agree within 8 %, so decode and encode overlap on the engine rather than taking turns. Whether Xe2 behaves the same is open until the Lunar Lake row is rerun.
+The earlier script decoded the whole clip in every session. On Xe2 that decode took engine time from the encoder (1.09 → 1.80 at level 7 once it is gone). On the UHD 630 it cost almost nothing (within 8 %), probably because Gen9.5 encodes on the full EncSlice path, which does part of its work on the shader cores.
 
 The total stays flat as sessions are added once the engines are saturated, and a single engine saturates with one session. The B580 has two Xe2 media engines. If the engine count shows as unknown, `sudo dmesg | grep -iE 'vcs[0-9]'` lists the fused-off ones.
 
