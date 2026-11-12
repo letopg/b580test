@@ -50,6 +50,8 @@ Reference results (Gpixel/s, saturated rows):
 
 The earlier script decoded the whole clip in every session. On Xe2 that decode took engine time from the encoder (1.09 → 1.80 at level 7 once it is gone). On the UHD 630 it cost almost nothing (within 8 %), probably because Gen9.5 encodes on the full EncSlice path, which does part of its work on the shader cores.
 
+On Xe2 the encode runs on the fixed-function video engine: during the Lunar Lake run the GPU's shader engines read 0 % and enc/dec 99 %. If you can, note the per-engine load while the bench runs (`nvtop` or `qmassa` work with the `xe` driver; `intel_gpu_top` with `i915`).
+
 The total stays flat as sessions are added once the engines are saturated, and a single engine saturates with one session. The B580 has two Xe2 media engines. If the engine count shows as unknown, `sudo dmesg | grep -iE 'vcs[0-9]'` lists the fused-off ones.
 
 ## The clip
