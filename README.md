@@ -10,10 +10,13 @@ Needs Linux with the `xe` kernel driver (kernel 6.12 or newer for Battlemage), t
 
 ```bash
 git clone https://github.com/letopg/b580test.git && cd b580test
-./b580_bench.sh            # or: ./b580_bench.sh /dev/dri/renderD129 to pick the GPU
+sudo ./b580_bench.sh       # or: sudo ./b580_bench.sh /dev/dri/renderD129 to pick the GPU
+                           # root only to read the video engine count from debugfs; plain ./b580_bench.sh works too
 ```
 
-It takes a few minutes. It decodes the bundled clip on the GPU and encodes it again with 1, 2, 3, 4 and 7 parallel sessions at three quality levels (1 = best quality, 4 = middle, 7 = fastest). Nothing is written to disk except `results/`.
+It takes 5–15 minutes. It first decodes the bundled clip on the GPU alone (decode-only pass), then decodes and re-encodes it with 1, 2, 3, 4 and 7 parallel sessions at three quality levels (1 = best quality, 4 = middle, 7 = fastest). Nothing is written to disk except `results/`.
+
+Intel GPUs decode and encode on the same video engines, so the encode runs also spend engine time decoding the test clip. In the real use the frames come from a compute shader, with no decode. The decode-only pass measures that share, and `enc_only_gpix_s` removes it.
 
 ## Output
 
@@ -24,11 +27,12 @@ It takes a few minutes. It decodes the bundled clip on the GPU and encodes it ag
 | level | VA-API quality level (1 best … 7 fastest) |
 | sessions | parallel encodes |
 | fps_per_session | frames per second each session reached |
-| gpix_s | total encoded pixels per second, all sessions (Gpixel/s) |
+| gpix_s | total encoded pixels per second, all sessions (Gpixel/s), including the clip's decode |
+| enc_only_gpix_s | estimated encode-only rate with the decode share removed (valid once gpix_s has stopped rising with more sessions) |
 
-`results/<gpu>.sysinfo.txt` records the GPU, kernel driver, PCIe link, VA driver version and whether the card offers HEVC Main10 encode.
+`results/<gpu>.decode.tsv` holds the decode-only pass. `results/<gpu>.sysinfo.txt` records the GPU, kernel driver, PCIe link, VA driver version, video engine count (when run as root) and whether the card offers HEVC Main10 encode.
 
-Please send back both files.
+Please send back all three files.
 
 ## Pass marks
 
@@ -43,8 +47,9 @@ Reference results, same script:
 |---|---|---|---|---|
 | Core Ultra 200V iGPU (Lunar Lake, Xe2, iHD 26.1.5) | 1 | 0.28 | 0.73 | 1.10 |
 | UHD 630 (Gen9.5 iGPU) | 1 | 0.15 | 0.24 | 0.41–0.50 |
+| UHD 630, encode-only (decode share removed, current script) | 1 | 0.16 | 0.31 | 0.80–0.90 |
 
-The B580 has two Xe2 media engines. Please include the engine count with your results: `sudo cat /sys/kernel/debug/dri/*/gt1/hw_engines | grep -E '^vcs'` (xe driver), or `sudo dmesg | grep -iE 'vcs[0-9]'`.
+The first two rows include the decode share (measured before the decode-only pass existed); on the UHD 630 removing it raises level 7 by ~1.6×. The B580 has two Xe2 media engines. If the engine count shows as unknown, `sudo dmesg | grep -iE 'vcs[0-9]'` lists the fused-off ones.
 
 Reference, Intel UHD 630 (Gen9.5 iGPU, one media engine), same script: 0.15 Gpixel/s at level 1, 0.24 at level 4, 0.41–0.50 at level 7. The total stays flat as sessions are added, because one engine is already saturated.
 
