@@ -37,6 +37,15 @@ Please send back both files.
 | One machine, 7 cameras | ≥ 3.4 Gpixel/s at a usable quality level |
 | Two machines, 4 cameras each | ≥ 1.9 Gpixel/s |
 
+Reference results, same script:
+
+| GPU | video engines | level 1 | level 4 | level 7 |
+|---|---|---|---|---|
+| Core Ultra 200V iGPU (Lunar Lake, Xe2, iHD 26.1.5) | 1 | 0.28 | 0.73 | 1.10 |
+| UHD 630 (Gen9.5 iGPU) | 1 | 0.15 | 0.24 | 0.41–0.50 |
+
+The B580 has two Xe2 media engines. Please include the engine count with your results: `sudo cat /sys/kernel/debug/dri/*/gt1/hw_engines | grep -E '^vcs'` (xe driver), or `sudo dmesg | grep -iE 'vcs[0-9]'`.
+
 Reference, Intel UHD 630 (Gen9.5 iGPU, one media engine), same script: 0.15 Gpixel/s at level 1, 0.24 at level 4, 0.41–0.50 at level 7. The total stays flat as sessions are added, because one engine is already saturated.
 
 ## The clip
